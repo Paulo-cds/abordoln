@@ -13,7 +13,7 @@ const Slide = ({ slide, index, current, handleSlideClick }: SlideProps) => {
 
   const xRef = useRef(0);
   const yRef = useRef(0);
-  const frameRef = useRef<number>();
+  const frameRef = useRef<number>(0);
 
   useEffect(() => {
     const animate = () => {
@@ -116,11 +116,6 @@ export function Carousel({ slides, autoplay = true, // Definindo padrão como tr
   const carouselRef = useRef<HTMLDivElement>(null); // Ref para o contêiner do carrossel
   const timerRef = useRef<NodeJS.Timeout | null>(null); // Ref para armazenar o ID do timer
   const isHovered = useRef(false);
-
-  const handlePreviousClick = () => {
-    const previous = current - 1;
-    setCurrent(previous < 0 ? slides.length - 1 : previous);
-  };
 
   const handleNextClick = () => {
     const next = current + 1;

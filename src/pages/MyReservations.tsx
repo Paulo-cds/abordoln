@@ -26,7 +26,9 @@ const MyReservations: React.FC = () => {
         return null;
       }
       const response = await getMyReservations({id:dataUser.userId, role:dataUser.role})
-      setReservationsData(response.data)
+      if(response && response.data){
+        setReservationsData(response.data)
+      }
     },
     { refetchOnWindowFocus: false }
   );

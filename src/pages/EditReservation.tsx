@@ -33,13 +33,17 @@ const EditReservation = () => {
   const [openAlert, setOpenAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
   const [alertType, setAlertType] = useState<"success" | "error">("success");
-  const [controlEditData, setControlEditData] = useState("");
+  const [scriptOptions, setScriptOptions] = useState<
+    { label: string; value: string }[]
+  >([]);
+
+  // const [controlEditData, setControlEditData] = useState("");
   const [copied, setCopied] = useState(false);
 
-  const { isLoading, error } = useQuery<CombinedBoatData | null>(
+  const { isLoading } = useQuery<CombinedBoatData | null>(
     ["reservation", id],
     async () => {
-      if (!id) {
+      if (!id || !boatId) {
         return null; // Retorna null se não houver ID, para a query não ser habilitada
       }
       const [boatData, reservationData] = await Promise.all([
@@ -61,7 +65,7 @@ const EditReservation = () => {
           const dataNoFormatoCorreto = `${partes[2]}-${partes[1]}-${partes[0]}`;
           const partesReserva = firstReservation.data.split("/");
           const dataNoFormatoCorretoReserva = `${partesReserva[2]}-${partesReserva[1]}-${partesReserva[0]}`;
-          setControlEditData(dataNoFormatoCorreto || "");
+          // setControlEditData(dataNoFormatoCorreto || "");
           formik.setValues({
             name: firstReservation.name || "",
             email: firstReservation.email || "",
@@ -103,7 +107,8 @@ const EditReservation = () => {
           newOptions?.forEach((item) => {
             reloadedItems.push({ label: item, value: item });
           });
-          dataControl.scripts = reloadedItems;
+          // dataControl.scripts = reloadedItems;
+          setScriptOptions(reloadedItems);
           setBoatAllData(dataControl);
         }
       },
@@ -115,7 +120,7 @@ const EditReservation = () => {
       },
     }
   );
-  
+
   useEffect(() => {
     setLoading(isLoading);
   }, [isLoading]);
@@ -148,7 +153,7 @@ const EditReservation = () => {
       script: yup.string().required("Selecione um roteiro."),
       acceptedTerms: yup.boolean().required("O tipo de usuário é obrigatório."),
     }),
-    onSubmit: async (values, { setSubmitting, resetForm, setFieldError }) => {
+    onSubmit: async (values, { setSubmitting, setFieldError }) => {
       setLoading(true);
       try {
         if (
@@ -164,10 +169,20 @@ const EditReservation = () => {
           return;
         }
 
+        if (!reservationAllData || !id) {
+          setAlertMessage("Erro: Dados da reserva original não encontrados.");
+          setAlertType("error");
+          setOpenAlert(true);
+          setLoading(false);
+          setSubmitting(false);
+          return;
+        }
+
         const partes = values.dataTour.split("-");
         const dataNoFormatoCorreto = `${partes[2]}/${partes[1]}/${partes[0]}`;
 
-        const data = {
+        const data: Reservation = {
+          ...reservationAllData,
           name: values.name,
           email: values.email,
           phone: values.phone,
@@ -211,8 +226,8 @@ const EditReservation = () => {
       (formik.values.status === "requested" ||
         formik.values.status === "canceled")
     ) {
-      formik.setFieldValue("finishLink", "")
-      formik.setFieldValue("productName", "")
+      formik.setFieldValue("finishLink", "");
+      formik.setFieldValue("productName", "");
     }
   }, [formik.values.status]);
 
@@ -327,13 +342,13 @@ const EditReservation = () => {
             ) : null}
           </div>
           <div>
-            {boatAllData && boatAllData.scripts && (
+            {boatAllData && scriptOptions && (
               <SelectDefault
                 placeholder={"Roteiro"}
                 name={"script"}
                 value={formik.values.script}
                 onChange={formik.handleChange}
-                options={boatAllData.scripts}
+                options={scriptOptions}
                 required={true}
               />
             )}
@@ -387,7 +402,9 @@ const EditReservation = () => {
               />
             </div>
             {formik.touched.productName && formik.errors.productName ? (
-              <p className="text-red-500 text-sm">{formik.errors.productName}</p>
+              <p className="text-red-500 text-sm">
+                {formik.errors.productName}
+              </p>
             ) : null}
           </div>
           <div>

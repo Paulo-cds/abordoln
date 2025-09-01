@@ -11,7 +11,7 @@ const Header = () => {
   const { userLoged, dataUser, logout, checkLogin, isLoadingData } =
     useUserData();
   const [isOpen, setIsOpen] = useState(false);
-  const sidebarRef = useRef<HTMLElement>(null);
+  const sidebarRef = useRef<HTMLElement>(document.createElement('div'));
   const location = useLocation();
 
   useClickOutside(sidebarRef, () => {

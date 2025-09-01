@@ -67,13 +67,14 @@ const NewAccount = () => {
           name: values.name,
           email: values.email,
           phone: values.phone,
-          role: values.role,
+          role: values.role ? values.role : "client",
           userId: userId,
           active: true,
+          level: typeUser.typeUser === "advertiser" ? "basic" : undefined,
         };
-        if (typeUser.typeUser === "advertiser") {
-          data.level = "basic";
-        }
+        // if (typeUser.typeUser === "advertiser") {
+        //   data.level = "basic";
+        // }
 
         await manageAccount(data);
 
@@ -90,15 +91,31 @@ const NewAccount = () => {
           navigate("/");
         }
       } catch (error) {
-        const errorCode = error.code;
-        const errorMessage = error.message;
-        if (errorCode === "auth/email-already-in-use") {
-          setAlertMessage("Email já cadastrado!");
-          setAlertType("error");
-          setOpenAlert(true);
+        // const errorCode = error.code;
+        // const errorMessage = error.message;
+        // if (errorCode === "auth/email-already-in-use") {
+        //   setAlertMessage("Email já cadastrado!");
+        //   setAlertType("error");
+        //   setOpenAlert(true);
+        // }
+        // console.log("error code ", errorCode);
+        // console.log("error message ", errorMessage);
+        if (typeof error === "object" && error !== null && "code" in error) {
+          const firebaseError = error as { code: string; message: string }; // Type assertion after the check
+          const errorCode = firebaseError.code;
+          const errorMessage = firebaseError.message;
+
+          if (errorCode === "auth/email-already-in-use") {
+            setAlertMessage("Email já cadastrado!");
+            setAlertType("error");
+            setOpenAlert(true);
+          }
+          console.log("error code ", errorCode);
+          console.log("error message ", errorMessage);
+        } else {
+          // Handle the generic 'unknown' error case
+          console.error("Um erro desconhecido ocorreu:", error);
         }
-        console.log("error code ", errorCode);
-        console.log("error message ", errorMessage);
       }
       setLoading(false);
     },

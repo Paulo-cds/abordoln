@@ -14,7 +14,16 @@ const MyBoats: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const { isLoading } = useQuery(
     ["data", dataUser],
-    () => getMyBoats(dataUser?.userId).then((data)=>setBoatsData(data.data)),
+    async () => {
+      if (dataUser) {
+        const response = await getMyBoats(dataUser?.userId);
+        if (response && response.data) {
+          setBoatsData(response.data);
+          return response.data;
+        }
+      }
+      return null;
+    },
     { refetchOnWindowFocus: false }
   );
   const navigate = useNavigate();
@@ -26,8 +35,14 @@ const MyBoats: React.FC = () => {
   const handleGetMyBoats = async () => {
     setLoading(true);
     try {
-      const response = await getMyBoats(dataUser?.userId);
-      setBoatsData(response.data);
+      // const response = await getMyBoats(dataUser?.userId);
+      // setBoatsData(response.data);
+      if (dataUser) {
+        const response = await getMyBoats(dataUser?.userId);
+        if (response && response.data) {
+          setBoatsData(response.data);
+        }
+      }
     } catch (e) {
       console.log(e);
     }

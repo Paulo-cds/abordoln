@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import ButtonDefault from "../components/ButtonDefault";
 import { useQuery } from "react-query";
-import { getAllBoats, getMyBoats } from "../services/Routes";
+import { getAllBoats } from "../services/Routes";
 import { useUserData } from "../components/ContextData";
 import LoadingDefault from "../components/LoadingDefault";
 import CardViewBoat from "../components/CardViewBoat";
@@ -14,7 +14,11 @@ const Boats: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const { isLoading } = useQuery(
     ["data", dataUser],
-    () => getAllBoats().then((data)=>setBoatsData(data.data)),
+    () => getAllBoats().then((data) => {
+      if (data) {
+        setBoatsData(data.data);
+      }
+    }),
     { refetchOnWindowFocus: false }
   );
   const navigate = useNavigate();
@@ -27,7 +31,9 @@ const Boats: React.FC = () => {
     setLoading(true);
     try {
       const response = await getAllBoats();
-      setBoatsData(response.data);
+      if(response){
+        setBoatsData(response.data);
+      }
     } catch (e) {
       console.log(e);
     }

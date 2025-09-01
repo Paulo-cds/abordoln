@@ -8,7 +8,7 @@ export type Repo = {
 };
 
 export type User = {
-  userId: string | number;
+  userId: string;
   name: string;
   email: string;
   phone: string;

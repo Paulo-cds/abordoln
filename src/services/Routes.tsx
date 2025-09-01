@@ -17,7 +17,7 @@ import {
   uploadBytes,
 } from "firebase/storage";
 import { collection, addDoc } from "firebase/firestore";
-import type { Boat, Repo, Reservation, User } from "../components/TypesUse";
+import type { Boat, Reservation, User } from "../components/TypesUse";
 
 /******Função que adiciona/edita usuário******/
 export const manageAccount = async (data: User) => {
@@ -62,7 +62,9 @@ export const addNewBoat = async (data: Boat) => {
     return { status: 200 };
   } catch (e) {
     console.log("error ", e);
-    return { status: 400, message: e.message };
+    if (e instanceof Error) {
+      return { status: 400, message: e.message };
+    }
   }
 };
 
@@ -71,14 +73,16 @@ export const getMyBoats = async (id: string) => {
   try {
     const q = query(collection(db, "boats"), where("managerId", "==", id));
     const querySnapshot = await getDocs(q);
-    const boats = querySnapshot.docs.map((doc) => ({
+    const boats: Boat[] = querySnapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
-    }));
+    })) as Boat[];
     return { data: boats, status: 200 };
   } catch (error) {
     console.error("Erro ao obter embarcações:", error);
-    return { status: 400, error: error.message };
+    if (error instanceof Error) {
+      return { status: 400, error: error.message };
+    }
   }
 };
 
@@ -118,7 +122,9 @@ export const editMyBoat = async (data: Boat, id: string) => {
     return { status: 200 };
   } catch (error) {
     console.error("Erro ao alterar barco:", error);
-    return { status: 400, error: error.message };
+    if (error instanceof Error) {
+      return { status: 400, error: error.message };
+    }
   }
 };
 
@@ -167,7 +173,9 @@ export const deleteSingleBoat = async (id: string, images: Array<string>) => {
     return { status: 200 };
   } catch (error) {
     console.error("Erro ao obter cliente:", error);
-    return { status: 400, error: error.message };
+    if (error instanceof Error) {
+      return { status: 400, error: error.message };
+    }
   }
 };
 
@@ -180,31 +188,42 @@ export const addNewReservation = async (data: Reservation) => {
     return { status: 200 };
   } catch (e) {
     console.log("error ", e);
-    return { status: 400, message: e.message };
+    if (e instanceof Error) {
+      return { status: 400, message: e.message };
+    }
   }
 };
 
 /******Função que faz o get de todas as reservas de um cliente especifico******/
 
 export type ReservationData = {
-  id:string,
-  role:string
-}
-export const getMyReservations = async ({id, role}:ReservationData) => {
+  id: string;
+  role: string;
+};
+
+type ReservationProps = Reservation & {
+  // Você pode adicionar outras props se o componente precisar
+  id: string;
+  // onClick?: () => void;
+};
+
+export const getMyReservations = async ({ id, role }: ReservationData) => {
   try {
     const q = query(
       collection(db, "reservations"),
-      where(role === "client" ? "clientId" : "managerId" , "==", id)
+      where(role === "client" ? "clientId" : "managerId", "==", id)
     );
     const querySnapshot = await getDocs(q);
-    const boats = querySnapshot.docs.map((doc) => ({
+    const boats: ReservationProps[] = querySnapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
-    }));
+    })) as ReservationProps[];
     return { data: boats, status: 200 };
   } catch (error) {
     console.error("Erro ao obter reservas:", error);
-    return { status: 400, error: error.message };
+    if (error instanceof Error) {
+      return { status: 400, error: error.message };
+    }
   }
 };
 
@@ -224,13 +243,13 @@ export const getSingleReservation = async (id: string) => {
 export const getAllReservations = async () => {
   try {
     const querySnapshot = await getDocs(collection(db, "reservations"));
-    const allBoats = querySnapshot.docs.map((doc) => ({
+    const allReservations = querySnapshot.docs.map((doc) => ({
       id: doc.id,
-      ...(doc.data() as Boat),
+      ...(doc.data() as Reservation),
     }));
-    return { data: allBoats, status: 200 };
+    return { data: allReservations, status: 200 };
   } catch (error) {
-    console.error("Erro ao obter barco:", error);
+    console.error("Erro ao obter reservas:", error);
     return null;
   }
 };
@@ -244,7 +263,9 @@ export const editsingleReservation = async (data: Reservation, id: string) => {
     return { status: 200 };
   } catch (error) {
     console.error("Erro ao editar reserva:", error);
-    return { status: 400, error: error.message };
+    if (error instanceof Error) {
+      return { status: 400, error: error.message };
+    }
   }
 };
 
@@ -257,7 +278,9 @@ export const confirmPaymentReservation = async (id: string) => {
     return { status: 200 };
   } catch (error) {
     console.error("Erro ao finalizar pagamento:", error);
-    return { status: 400, error: error.message };
+    if (error instanceof Error) {
+      return { status: 400, error: error.message };
+    }
   }
 };
 
@@ -292,7 +315,7 @@ export const assessmentTrip = async ({
     value: data.value,
     text: data.text,
     userName: data.userName,
-    date: data.date
+    date: data.date,
   };
   try {
     const boatRef = doc(db, "reservations", id);
@@ -307,7 +330,10 @@ export const assessmentTrip = async ({
     return { status: 200 };
   } catch (error) {
     console.error("Erro ao alterar avaliação:", error);
-    return { status: 400, error: error.message };
+    if (error instanceof Error) {
+      return { status: 400, error: error.message };
+    }
+    return { status: 400, error: "An unknown error occurred." };
   }
 };
 
@@ -323,6 +349,8 @@ export const getMyReviews = async (id: string) => {
     return { data: boats, status: 200 };
   } catch (error) {
     console.error("Erro ao obter reservas:", error);
-    return { status: 400, error: error.message };
+    if (error instanceof Error) {
+      return { status: 400, error: error.message };
+    }
   }
 };

@@ -1,5 +1,5 @@
 import { useQuery } from "react-query";
-import { getAllReservations, getMyReservations } from "../services/Routes";
+import { getAllReservations } from "../services/Routes";
 import { useUserData } from "../components/ContextData";
 import LoadingDefault from "../components/LoadingDefault";
 import { useEffect, useState } from "react";
@@ -26,7 +26,9 @@ const Reservations: React.FC = () => {
         return null;
       }
       const response = await getAllReservations()
-      setReservationsData(response.data)
+      if(response){
+        setReservationsData(response.data)
+      }
     },
     { refetchOnWindowFocus: false }
   );

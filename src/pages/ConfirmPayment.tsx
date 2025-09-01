@@ -10,7 +10,7 @@ const ConfirmPayment = () => {
   const { id } = useParams();
   const [reservationCompleted, setReservationCompleted] = useState("");
 
-  const { isLoading, error } = useQuery(
+  const { isLoading } = useQuery(
     ["boat", id],
     () => confirmPaymentReservation(id || ""),
     {

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import ButtonDefault from "../components/ButtonDefault";
 import InputDefault from "../components/InputDefault";
 import { useFormik } from "formik";
@@ -25,6 +25,12 @@ interface CombinedBoatData {
   reviews: Review[];
 }
 
+interface SelectOption {
+  label: string;
+  value: string;
+}
+
+
 const DetailBoat = () => {
   const [loading, setLoading] = useState(false);
   const { id } = useParams();
@@ -38,6 +44,7 @@ const DetailBoat = () => {
   const [valueReserve, setValueReserve] = useState<string>("");
   const [alertBig, setAlertBig] = useState<boolean>(false);
   const [reviewsBoat, setReviewsBoat] = useState<Review[]>();
+  const [optionsSelect, setOptionsSelect] = useState<SelectOption[]>([]);
 
   const { isLoading, error } = useQuery<CombinedBoatData | null>(
     ["boat", id],
@@ -49,24 +56,28 @@ const DetailBoat = () => {
         getSingleBoat(id),
         getMyReviews(id),
       ]);
-      return { boatData, reviews };
+      const reviewsData = reviews.status === 200 ? reviews.data : [];
+
+      return { boatData, reviews: reviewsData };
     },
     {
       enabled: !!id,
       refetchOnWindowFocus: false,
       retry: 1,
-      onSuccess: (data) => {        
-        if (data && data.boatData) {
-          setImagesFile(data.boatData.images || []);
-          setBoatAllData(data.boatData);
-          setValueReserve(
-            parseFloat(parseFloat(data.boatData.price) * 1.04)
-              .toFixed(2)
-              .replace(".", ",")
-          );
-        }
-        if (data && data.reviews) {
-          setReviewsBoat(data.reviews.data);
+      onSuccess: (data) => {
+        if (data) {
+          if (data.boatData) {
+            setImagesFile(data.boatData.images || []);
+            setBoatAllData(data.boatData);
+            setValueReserve(
+              parseFloat(parseFloat(data.boatData.price) * 1.04)
+                .toFixed(2)
+                .replace(".", ",")
+            );
+          }
+          if (data.reviews) {
+            setReviewsBoat(data.reviews.data);
+          }
         }
       },
       onError: (err) => {
@@ -86,7 +97,8 @@ const DetailBoat = () => {
       newOptions?.forEach((item) => {
         reloadedItems.push({ label: item, value: item });
       });
-      dataControl.scripts = reloadedItems;
+      setOptionsSelect(reloadedItems);
+      // dataControl.scripts = reloadedItems;
       setBoatAllData(dataControl);
     }
   }, [boatAllData]);
@@ -378,7 +390,7 @@ const DetailBoat = () => {
                   name={"script"}
                   value={formik.values.script}
                   onChange={formik.handleChange}
-                  options={boatAllData.scripts}
+                  options={optionsSelect}
                   required={true}
                 />
                 {formik.touched.script && formik.errors.script ? (
@@ -425,16 +437,19 @@ const DetailBoat = () => {
       )}
       <div className="flex items-center gap-3 mt-10 w-full overflow-y-auto p-1">
         {reviewsBoat &&
-          reviewsBoat.slice(0).reverse().map((boat, i) => (
-            <CardReviews
-              boatId={boat.boatId}
-              text={boat.text}
-              value={boat.value}
-              date={boat.date}
-              userName={boat.userName}
-              key={i}
-            />
-          ))}
+          reviewsBoat
+            .slice(0)
+            .reverse()
+            .map((boat, i) => (
+              <CardReviews
+                boatId={boat.boatId}
+                text={boat.text}
+                value={boat.value}
+                date={boat.date}
+                userName={boat.userName}
+                key={i}
+              />
+            ))}
       </div>
       {loading && <LoadingDefault />}
       {openAlert && (

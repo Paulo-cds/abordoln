@@ -98,7 +98,14 @@ const NewBoat = () => {
           const uploadPromises = imagesFile.map(async (image) => {
             try {
               const response = await uploadImages(image);
-              if (response.status === "success") {
+              // if (response.status === "success") {
+              //   return response.url;
+              // } else {
+              //   console.error(`Erro ao fazer upload da imagem ${image.name}`);
+              //   return null;
+              // }
+              if ("url" in response) {
+                // TypeScript now knows that 'response' is the success type, so 'url' exists
                 return response.url;
               } else {
                 console.error(`Erro ao fazer upload da imagem ${image.name}`);
@@ -114,9 +121,10 @@ const NewBoat = () => {
           });
 
           // Aguarda todas as promessas de upload
-          const uploadedUrls = (await Promise.all(uploadPromises)).filter(
-            (url: string) => url !== null
-          ) as string[];
+          // const uploadedUrls = (await Promise.all(uploadPromises)).filter(
+          //   (url: string) => url !== null
+          // ) as string[];
+          const uploadedUrls = (await Promise.all(uploadPromises)).filter(Boolean) as string[];
 
           if (uploadedUrls.length === 0 && imagesFile.length > 0) {
             setFieldError(
@@ -446,7 +454,8 @@ const NewBoat = () => {
                 Adicione as estruturas da embarcação, como: banheiro, cozinha,
                 etc.
               </p>
-              {formik.values.structure.length > 0 &&
+              {formik.values.structure &&
+                formik.values.structure.length > 0 &&
                 formik.values.structure.map((detail, index) => (
                   <div
                     className="flex items-center gap-2 grid grid-cols-12"

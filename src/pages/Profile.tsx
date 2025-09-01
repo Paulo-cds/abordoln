@@ -5,25 +5,14 @@ import InputDefault from "../components/InputDefault";
 import { useFormik } from "formik";
 import * as yup from "yup";
 import LoadingDefault from "../components/LoadingDefault";
-import logo from "../assets/logo redondo.png";
-import {
-  createUserWithEmailAndPassword,
-  getAuth,
-  sendEmailVerification,
-  signInWithEmailAndPassword,
-  updateEmail,
-} from "firebase/auth";
-import { manageAccount } from "../services/Routes";
-import { useNavigate } from "react-router-dom";
+import { getAuth, sendEmailVerification, updateEmail } from "firebase/auth";
 
 const Profile = () => {
   const { dataUser } = useUserData();
   console.log("user ", dataUser);
 
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
   const auth = getAuth();
-  const urlParams = new URLSearchParams(window.location.search);
 
   const formik = useFormik({
     initialValues: {
@@ -42,12 +31,19 @@ const Profile = () => {
     }),
     onSubmit: async (values) => {
       setLoading(true);
-      console.log('enviando para: ', values.email)
       try {
-        await updateEmail(auth.currentUser, values.email)
-        .then(async ()=>{
-          await sendEmailVerification(values.email)
-        })
+        if (auth.currentUser) {
+          // await updateEmail(auth.currentUser, values.email).then(async () => {
+          //   await sendEmailVerification(values.email);
+          // });
+          await updateEmail(auth.currentUser, values.email);
+          // Corrected argument for sendEmailVerification
+          await sendEmailVerification(auth.currentUser);
+        } else {
+          console.warn(
+            "Nenhum usuário logado encontrado para atualizar o email."
+          );
+        }
       } catch (e) {
         console.log("erro editando ", e);
       }
@@ -149,9 +145,8 @@ const Profile = () => {
             </div>
           </div>
           <div className="flex flex-col w-full items-center">
-          <ButtonDefault text={"Salvar"} type={"submit"} />
+            <ButtonDefault text={"Salvar"} type={"submit"} />
           </div>
-            
         </form>
       </div>
       {loading && <LoadingDefault />}
