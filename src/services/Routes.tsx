@@ -17,7 +17,7 @@ import {
   uploadBytes,
 } from "firebase/storage";
 import { collection, addDoc } from "firebase/firestore";
-import type { Boat, Reservation, User } from "../components/TypesUse";
+import type { Boat, Reservation, Review, User } from "../components/TypesUse";
 
 /******Função que adiciona/edita usuário******/
 export const manageAccount = async (data: User) => {
@@ -33,21 +33,39 @@ export const manageAccount = async (data: User) => {
 };
 
 /******Função que faz o upload de imagens******/
-export const uploadImages = async (file: File) => {
+
+export interface UploadSuccess {
+  status: "success";
+  url: string;
+}
+
+export interface UploadError {
+  status: "error";
+  error: unknown;
+}
+
+export type UploadResponse = UploadSuccess | UploadError;
+
+// A função de guarda de tipo
+export function isSuccess(response: UploadResponse): response is UploadSuccess {
+  return response.status === "success";
+}
+
+export const uploadImages = async (file: File): Promise<UploadResponse> => {
   const storage = getStorage();
   const storageRef = ref(storage, `images/${file.name}-${Date.now()}`);
 
   try {
     const snapshot = await uploadBytes(storageRef, file);
     const url = await getDownloadURL(snapshot.ref);
-    const dataReturn = {
+    const dataReturn: UploadSuccess = {
       status: "success",
       url: url,
     };
     return dataReturn;
   } catch (error) {
     console.error("Erro ao fazer upload da imagem:", error);
-    const dataReturn = {
+    const dataReturn: UploadError = {
       status: "error",
       error: error,
     };
@@ -287,7 +305,7 @@ export const confirmPaymentReservation = async (id: string) => {
 /******Função que altera avaliação do passeio******/
 export type RatingData = {
   data: {
-    value: number;
+    value: number | null;
     text: string;
     userName: string;
     date: string;
@@ -344,7 +362,7 @@ export const getMyReviews = async (id: string) => {
     const querySnapshot = await getDocs(q);
     const boats = querySnapshot.docs.map((doc) => ({
       id: doc.id,
-      ...doc.data(),
+      ...(doc.data() as Review),
     }));
     return { data: boats, status: 200 };
   } catch (error) {

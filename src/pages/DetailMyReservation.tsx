@@ -7,7 +7,7 @@ import {
   getSingleReservation,
   type RatingData,
 } from "../services/Routes";
-import { type Reservation } from "../components/TypesUse";
+import { type Reservation, /*type SelectOption*/ } from "../components/TypesUse";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "react-query";
 import DividerComponent from "../components/DividerComponent";
@@ -28,10 +28,11 @@ const DetailMyReservation = () => {
   const [alertType, setAlertType] = useState<"success" | "error">("success");
   const [assessmentChanged, setAssessmentChanged] = useState<boolean>(false);
   const [errorAssessment, setErrorAssessment] = useState<boolean>(false);
-  const [assessmentValue, setAssessmentValue] = useState(0);
+  const [assessmentValue, setAssessmentValue] = useState<number | null>(null);
   const [assessmentText, setAssessmentText] = useState("");
   const [minDate, setMinDate] = useState("");
-  console.log("reservationAllData ", reservationAllData);
+  // const [optionsSelect, setOptionsSelect] = useState<SelectOption[]>([]);
+  
   const { isLoading, error } = useQuery<Reservation | null>(
     ["reservation", id, assessmentChanged],
     () => getSingleReservation(id || ""),
@@ -57,40 +58,40 @@ const DetailMyReservation = () => {
     }
   );
 
-  useEffect(() => {
-    if (reservationAllData) {
-      const dataControl = reservationAllData;
-      const newOptions = dataControl.scripts;
-      const reloadedItems = [{ label: "Roteiros", value: "" }];
-      newOptions?.forEach((item) => {
-        reloadedItems.push({ label: item, value: item });
-      });
-      dataControl.scripts = reloadedItems;
-      setReservationAllData(dataControl);
-    }
-  }, [reservationAllData]);
+  // useEffect(() => {
+  //   if (reservationAllData) {
+  //     const dataControl = reservationAllData;
+  //     const newOptions = dataControl.scripts;
+  //     const reloadedItems = [{ label: "Roteiros", value: "" }];
+  //     newOptions?.forEach((item: string) => {
+  //       reloadedItems.push({ label: item, value: item });
+  //     });
+  //     setOptionsSelect(reloadedItems);
+  //     setReservationAllData(dataControl);
+  //   }
+  // }, [reservationAllData]);
 
   useEffect(() => {
     setLoading(isLoading);
   }, [isLoading]);
 
-  useEffect(() => {
-    const savedFormData = sessionStorage.getItem("solicitacaoPendencia");
-    if (savedFormData) {
-      const userFromData = JSON.parse(savedFormData);
-      formik.setValues({
-        name: userFromData.name,
-        email: userFromData.email,
-        phone: userFromData.phone,
-        quantity: userFromData.quantity,
-        dataTour: userFromData.dataTour,
-        data: new Date().toLocaleDateString(),
-        script: userFromData.script,
-        acceptedTerms: userFromData.acceptedTerms,
-      });
-      sessionStorage.removeItem("solicitacaoPendencia");
-    }
-  }, []);
+  // useEffect(() => {
+  //   const savedFormData = sessionStorage.getItem("solicitacaoPendencia");
+  //   if (savedFormData) {
+  //     const userFromData = JSON.parse(savedFormData);
+  //     formik.setValues({
+  //       name: userFromData.name,
+  //       email: userFromData.email,
+  //       phone: userFromData.phone,
+  //       quantity: userFromData.quantity,
+  //       dataTour: userFromData.dataTour,
+  //       data: new Date().toLocaleDateString(),
+  //       script: userFromData.script,
+  //       acceptedTerms: userFromData.acceptedTerms,
+  //     });
+  //     sessionStorage.removeItem("solicitacaoPendencia");
+  //   }
+  // }, []);
 
   if (error) {
     console.log("Erro get-edit ", error);
@@ -99,9 +100,11 @@ const DetailMyReservation = () => {
   const handleVerificDate = () => {
     const today = new Date().toLocaleDateString("pt-BR");
     // const tripDay = new Date(reservationAllData.dataTour).toDateString();
-    if (today >= reservationAllData.dataTour) {
-      return true;
-    } else return false;
+    if(reservationAllData){
+      if (today >= reservationAllData.dataTour) {
+        return true;
+      } else return false;
+    }
   };
 
   useEffect(() => {
@@ -155,7 +158,7 @@ const DetailMyReservation = () => {
         ((dataUser &&
           reservationAllData.assessment &&
           dataUser.role !== "client") ||
-          dataUser.role === "client") && (
+          (dataUser && dataUser.role === "client")) && (
           <div className="p-4 w-[800px] max-w-9/10 border border-primary mt-10 rounded-2xl">
             <p className="text-primary text-[1em] font-semibold ">
               {!reservationAllData.assessment && dataUser.role === "client"

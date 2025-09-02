@@ -39,6 +39,12 @@ export type Boat = {
   // boatAllData?:string;
 };
 
+export interface Assessment {
+  text: string;
+  value: number;
+  userName: string;
+}
+
 export type Reservation = {
   clientId: string;
   boatId: string;
@@ -54,12 +60,11 @@ export type Reservation = {
   price: string;
   imgBoat?: string;
   acceptedTerms: boolean;
-  // acceptedReserv: boolean;
   paid: boolean;
   boarding: string;
   boardingTime: string;
   duration: string;
-  assessment?:object;
+  assessment?:Assessment;
   status: string;
   paymentLink?: string;
   finishLink?: string;
@@ -73,6 +78,11 @@ export type Review = {
   userName: string;
   date:string;
 };
+
+export interface SelectOption {
+  label: string;
+  value: string;
+}
 
 export const typesOfBoats = [
   { label: "Lancha", value: "speedboat" },

@@ -11,7 +11,7 @@ import {
   getSingleBoat,
 } from "../services/Routes";
 import { useUserData } from "../components/ContextData";
-import { type Boat, type Review } from "../components/TypesUse";
+import { type Boat, type Review, type SelectOption } from "../components/TypesUse";
 import AlertNotification from "../components/AlertNotification";
 import { useParams } from "react-router-dom";
 import { useQuery } from "react-query";
@@ -20,15 +20,15 @@ import DividerComponent from "../components/DividerComponent";
 import AlertBigItem from "../components/AlertBigItem";
 import CardReviews from "../components/CardReviews";
 
+type ReviewProps = Review & {
+  id: string;
+};
+
 interface CombinedBoatData {
   boatData: Boat | null; // Pode ser null se getSingleBoat retornar null
-  reviews: Review[];
+  reviews: Review[] | null;
 }
 
-interface SelectOption {
-  label: string;
-  value: string;
-}
 
 
 const DetailBoat = () => {
@@ -52,13 +52,17 @@ const DetailBoat = () => {
       if (!id) {
         return null; // Retorna null se não houver ID, para a query não ser habilitada
       }
-      const [boatData, reviews] = await Promise.all([
+      const [boatDataResponse, reviewsResponse] = await Promise.all([
         getSingleBoat(id),
         getMyReviews(id),
       ]);
-      const reviewsData = reviews.status === 200 ? reviews.data : [];
+      let reviewsData: ReviewProps[] = [];
 
-      return { boatData, reviews: reviewsData };
+      if (reviewsResponse && reviewsResponse.data) {
+        reviewsData = reviewsResponse.data;
+      }
+
+      return { boatData: boatDataResponse, reviews: reviewsData };
     },
     {
       enabled: !!id,
@@ -69,14 +73,15 @@ const DetailBoat = () => {
           if (data.boatData) {
             setImagesFile(data.boatData.images || []);
             setBoatAllData(data.boatData);
-            setValueReserve(
-              parseFloat(parseFloat(data.boatData.price) * 1.04)
-                .toFixed(2)
-                .replace(".", ",")
-            );
+            if (data.boatData.price) {
+              const calculatedPrice = (
+                parseFloat(data.boatData.price) * 1.04
+              ).toFixed(2);
+              setValueReserve(calculatedPrice.replace(".", ","));
+            }
           }
           if (data.reviews) {
-            setReviewsBoat(data.reviews.data);
+            setReviewsBoat(data.reviews);
           }
         }
       },
@@ -142,6 +147,16 @@ const DetailBoat = () => {
     onSubmit: async (values, { setSubmitting, resetForm, setFieldError }) => {
       setLoading(true);
       try {
+        if (!boatAllData) {
+          console.error("boatAllData não está disponível.");
+          setAlertMessage("Erro: Dados do barco não carregados.");
+          setAlertType("error");
+          setOpenAlert(true);
+          setLoading(false);
+          setSubmitting(false);
+          return;
+        }
+
         if (!userLoged?.isLoged) {
           sessionStorage.setItem(
             "solicitacaoPendencia",
@@ -176,33 +191,37 @@ const DetailBoat = () => {
 
         const dateAtMidnightLocal = new Date(`${values.dataTour}T00:00:00`);
 
-        const data = {
-          name: values.name,
-          email: values.email,
-          phone: values.phone,
-          quantity: values.quantity,
-          data: values.data,
-          dataTour: dateAtMidnightLocal.toLocaleDateString("pt-BR"),
-          script: values.script,
-          acceptedTerms: values.acceptedTerms,
-          clientId: dataUser?.userId,
-          boatId: id,
-          boatName: boatAllData?.name,
-          imgBoat: boatAllData?.images[0],
-          price: valueReserve,
-          managerId: boatAllData?.managerId,
-          acceptedReserv: false,
-          paid: false,
-          boarding: boatAllData?.boarding,
-          boardingTime: boatAllData?.boardingTime,
-          duration: boatAllData.duration,
-        };
-        await addNewReservation(data);
-        setAlertMessage(
-          "Solicitação enviada com sucesso! Logo retornaremos com a confirmação."
-        );
-        setAlertBig(true);
-        resetForm();
+        if (dataUser && id && boatAllData) {
+          const data = {
+            name: values.name,
+            email: values.email,
+            phone: values.phone,
+            quantity: values.quantity,
+            data: values.data,
+            dataTour: dateAtMidnightLocal.toLocaleDateString("pt-BR"),
+            script: values.script,
+            acceptedTerms: values.acceptedTerms,
+            clientId: dataUser.userId,
+            boatId: id,
+            boatName: boatAllData.name ?? '',
+            imgBoat: boatAllData.images[0], // Use optional chaining for safety
+            price: valueReserve,
+            managerId: boatAllData.managerId ?? "",
+            acceptedReserv: false,
+            paid: false,
+            boarding: boatAllData.boarding ?? "",
+            boardingTime: boatAllData.boardingTime ?? "",
+            duration: boatAllData.duration ?? "",
+            status: "requested", // Add the required status property
+          };
+
+          await addNewReservation(data);
+          setAlertMessage(
+            "Solicitação enviada com sucesso! Logo retornaremos com a confirmação."
+          );
+          setAlertBig(true);
+          resetForm();
+        }
       } catch (e) {
         console.log(e);
       }

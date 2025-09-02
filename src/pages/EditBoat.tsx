@@ -8,7 +8,7 @@ import { CiCirclePlus } from "react-icons/ci";
 import { IoIosRemoveCircleOutline } from "react-icons/io";
 import SelectDefault from "../components/SelectDefault";
 import { CiImageOn } from "react-icons/ci";
-import { editMyBoat, getSingleBoat, uploadImages } from "../services/Routes";
+import { editMyBoat, getSingleBoat, isSuccess, uploadImages } from "../services/Routes";
 import { useUserData } from "../components/ContextData";
 import { citiesOfBoats, typesOfBoats, type Boat } from "../components/TypesUse";
 import { FaCheck } from "react-icons/fa";
@@ -151,7 +151,7 @@ const EditBoat = () => {
             try {
               if (typeof image !== "string") {
                 const response = await uploadImages(image);
-                if (response.status === "success") {
+                if (isSuccess(response)) {
                   return response.url;
                 } else {
                   console.error(`Erro ao fazer upload da imagem ${image.name}`);
@@ -169,7 +169,7 @@ const EditBoat = () => {
 
           // Aguarda todas as promessas de upload
           const uploadedUrls = (await Promise.all(uploadPromises)).filter(
-            (url: string) => url !== null
+            url => url !== null
           ) as string[];
 
           if (uploadedUrls.length === 0 && imagesFile.length > 0) {
@@ -501,7 +501,7 @@ const EditBoat = () => {
                 Adicione as estruturas da embarcação, como: banheiro, cozinha,
                 etc.
               </p>
-              {formik.values.structure.length > 0 &&
+              {formik.values.structure && formik.values.structure.length > 0 &&
                 formik.values.structure.map((detail, index) => (
                   <div
                     className="flex items-center gap-2 grid grid-cols-12"
