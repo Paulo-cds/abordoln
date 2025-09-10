@@ -5,9 +5,10 @@ import LoadingDefault from "../components/LoadingDefault";
 import {
   assessmentTrip,
   getSingleReservation,
+  handlePaymentLink,
   type RatingData,
 } from "../services/Routes";
-import { type Reservation, /*type SelectOption*/ } from "../components/TypesUse";
+import { type Reservation /*type SelectOption*/ } from "../components/TypesUse";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "react-query";
 import DividerComponent from "../components/DividerComponent";
@@ -32,7 +33,7 @@ const DetailMyReservation = () => {
   const [assessmentText, setAssessmentText] = useState("");
   const [minDate, setMinDate] = useState("");
   // const [optionsSelect, setOptionsSelect] = useState<SelectOption[]>([]);
-  
+
   const { isLoading, error } = useQuery<Reservation | null>(
     ["reservation", id, assessmentChanged],
     () => getSingleReservation(id || ""),
@@ -100,7 +101,7 @@ const DetailMyReservation = () => {
   const handleVerificDate = () => {
     const today = new Date().toLocaleDateString("pt-BR");
     // const tripDay = new Date(reservationAllData.dataTour).toDateString();
-    if(reservationAllData){
+    if (reservationAllData) {
       if (today >= reservationAllData.dataTour) {
         return true;
       } else return false;
@@ -150,7 +151,31 @@ const DetailMyReservation = () => {
       console.log(e);
     }
   };
-  
+
+  const handleGenerationPayment = async () => {
+    setLoading(true);
+    try {
+      if (id && reservationAllData) {
+        const amountWithDot = reservationAllData.price.replace(",", ".");
+
+        // 2. Converte para um número decimal (float)
+        const amountFloat = parseFloat(amountWithDot);
+
+        // 3. Multiplica por 100 e arredonda para um número inteiro
+        const amountInCents = Math.round(amountFloat * 100);
+
+        const itemToBuy = {
+          name: `Reserva ${reservationAllData.name} - ${reservationAllData.boatName}`,
+          amount: amountInCents,
+        };
+        await handlePaymentLink(itemToBuy, id);
+      }
+    } catch (e) {
+      console.log(e);
+    }
+    setLoading(false);
+  };
+
   return (
     <>
       {reservationAllData &&
@@ -266,8 +291,17 @@ const DetailMyReservation = () => {
             <DividerComponent />
             <div className="flex items-center gap-3">
               <p className="text-primary text-[1em] font-medium ">Pago:</p>
-              <p className="text-primary text[1em]">
+              <p className="text-primary text[1em] flex items-center gap-2">
                 {reservationAllData.paid ? "Sim" : "Não"}
+                {/* {!reservationAllData.paid &&
+                  reservationAllData.status === "aproved" && (
+                    <p className="text-blue-500 cursor-pointer" onClick={handleGenerationPayment}>
+                      Clique aqui para pagar
+                    </p>
+                  )} */}
+                  <p className="text-blue-500 cursor-pointer" onClick={()=>handleGenerationPayment()}>
+                      Clique aqui para pagar
+                    </p>
               </p>
             </div>
             <DividerComponent />
@@ -300,23 +334,25 @@ const DetailMyReservation = () => {
                 {reservationAllData.duration}
               </p>
             </div>
-            {
-              reservationAllData.paymentLink &&
+            {reservationAllData.paymentLink && (
               <>
                 <DividerComponent />
-            <div className="flex items-center gap-3">
-              <p className="text-primary text-[1em] font-medium ">
-                Link de pagamento:
-              </p>
-              <p className="text-primary text[1em]">
-                <a href={reservationAllData.paymentLink} rel="noopener noreferrer">
-                  Clique aqui para pagar
-                </a>
-                {/* {reservationAllData.dataTour} */}
-              </p>
-            </div>
+                <div className="flex items-center gap-3">
+                  <p className="text-primary text-[1em] font-medium ">
+                    Link de pagamento:
+                  </p>
+                  <p className="text-primary text[1em]">
+                    <a
+                      href={reservationAllData.paymentLink}
+                      rel="noopener noreferrer"
+                    >
+                      Clique aqui para pagar
+                    </a>
+                    {/* {reservationAllData.dataTour} */}
+                  </p>
+                </div>
               </>
-            }
+            )}
             {dataUser && dataUser.role === "admin" && (
               <>
                 <DividerComponent />

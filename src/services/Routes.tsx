@@ -18,6 +18,8 @@ import {
 } from "firebase/storage";
 import { collection, addDoc } from "firebase/firestore";
 import type { Boat, Reservation, Review, User } from "../components/TypesUse";
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '../firebase';
 
 /******Função que adiciona/edita usuário******/
 export const manageAccount = async (data: User) => {
@@ -372,3 +374,48 @@ export const getMyReviews = async (id: string) => {
     }
   }
 };
+
+
+/*****Pagamentos ******/
+
+export type Item = {
+  name: string;
+  amount: number; // Mude de string para number, pois o Stripe usa números para valores
+};
+
+// Nova interface que representa o objeto completo enviado para a Cloud Function
+export interface PaymentData {
+  item: Item;
+  orderId: string;
+}
+
+export interface StripeSessionResult {
+  sessionUrl: string;
+}
+
+export const handlePaymentLink = async (itemToBuy: Item, orderId: string) => {
+  console.log('Chamando handlePaymentLink')
+  try {
+    // const createStripeSession = httpsCallable(functions, 'createStripeSession');
+
+    const createStripeSession = httpsCallable<PaymentData, StripeSessionResult>(
+      functions,
+      'createStripeSession'
+    );
+
+    // Chame a função, passando o objeto do item
+    const result = await createStripeSession({ 
+      item: itemToBuy, 
+      orderId: orderId
+    });
+
+    const sessionUrl = result.data.sessionUrl;
+
+    // Redirecione o usuário para o Stripe Checkout
+    window.location.href = sessionUrl;
+
+  } catch (error) {
+    console.error("Erro ao iniciar o checkout:", error);
+    alert("Ocorreu um erro. Por favor, tente novamente.");
+  }
+}
