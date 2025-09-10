@@ -31,16 +31,16 @@ const db = getFirestore(app);
 const auth = getAuth(app);
 // const analytics = getAnalytics(app);
 
-if (window.location.hostname === "localhost") {
-  console.log("Ambiente de desenvolvimento detectado. Conectando aos emuladores...");
+// if (window.location.hostname === "localhost") {
+//   console.log("Ambiente de desenvolvimento detectado. Conectando aos emuladores...");
 
-  // Conecta ao emulador de Autenticação
-  // A porta padrão é 9099
-  connectAuthEmulator(auth, "http://localhost:9099");
+//   // Conecta ao emulador de Autenticação
+//   // A porta padrão é 9099
+//   connectAuthEmulator(auth, "http://localhost:9099");
 
-  // Conecta ao emulador de Funções
-  // A porta padrão é 5001
-  connectFunctionsEmulator(functions, "localhost", 5001);
-}
+//   // Conecta ao emulador de Funções
+//   // A porta padrão é 5001
+//   connectFunctionsEmulator(functions, "localhost", 5001);
+// }
 
 export {app, functions, db, auth};
