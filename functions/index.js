@@ -1,6 +1,6 @@
 // comando para atualizar funções - firebase deploy --only functions
 const functions = require('firebase-functions');
-const stripe = require('stripe')(functions.config().stripe.secretkey) //("sk_test_51S012lQ1RyYaIQQumk8C897pEeeSvNJrIybNMJXqxikhxcrnllU53sWGsQoPLyOqbo6bDWMxz247B1gmKuAgP7pP00Kybg0WiI") 
+const stripe = require('stripe')(functions.config().stripe.secretkey) //
 
 const {onCall, HttpsError} = require("firebase-functions/v2/https");
 const {logger} = require("firebase-functions/v2");
