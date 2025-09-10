@@ -1,52 +1,53 @@
-// comando para atualizar funções - firebase deploy --only functions
-const functions = require('firebase-functions');
-const stripe = require('stripe')(functions.config().stripe.secretkey) //
+const { onCall, HttpsError } = require("firebase-functions/v2/https");
+const { defineSecret } = require("firebase-functions/params");
+const Stripe = require("stripe");
 
-const {onCall, HttpsError} = require("firebase-functions/v2/https");
-const {logger} = require("firebase-functions/v2");
+const stripeSecret = defineSecret("STRIPE_SECRET");
 
+exports.createStripeSession = onCall(
+  { secrets: [stripeSecret] },
+  async (request) => {
+    const data = request.data;
 
-// const stripe = new Stripe(functions.config().stripe.secretkey, {
-//   apiVersion: '2025-08-15' // É uma boa prática definir a versão da API
-// });
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "Usuário não autenticado.");
+    }
 
-
-exports.createStripeSession = functions.https.onCall(async (data, context) => {
-  // 2. Verifique se o usuário está autenticado. 
-  //   Isso é fundamental para a segurança.
-  
-  if (!context.auth) {
-    throw new functions.https.HttpsError('unauthenticated', 'A função deve ser chamada por um usuário autenticado.', context);
-  }
-
-  // 3. Receba os dados do frontend
-  const { item, orderId } = data; // Você enviará esses dados do React
-
-  try {
-    const session = await stripe.checkout.sessions.create({
-      line_items: [
-        {
-          price_data: {
-            currency: 'brl', // Adapte para a sua moeda
-            product_data: {
-              name: item.name,
-            },
-            unit_amount: item.amount, // O valor já em centavos
-          },
-          quantity: 1, // A quantidade é 1
-        },
-      ],
-      payment_intent_data: {
-        transfer_group: orderId, // Usa o orderId enviado do frontend
-      },
-      mode: 'payment',
-      success_url: `http://localhost:5173/confirmacao-pagamento/${orderId}`, // Redireciona para a página de confirmação
+    const stripe = new Stripe(stripeSecret.value(), {
+      apiVersion: "2023-10-16",
     });
 
-    // 5. Retorne a URL da sessão do Stripe para o frontend
-    return { sessionUrl: session.url };
-  } catch (error) {
-    console.error("Erro ao criar a sessão do Stripe:", error);
-    throw new functions.https.HttpsError('internal', 'Erro ao criar a sessão de pagamento.');
+    const { item, orderId } = data;
+
+    try {
+      console.log("Criando Stripe session com:", {
+        item,
+        orderId,
+        stripeKey: !!stripeSecret.value(),
+      });
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ["card"],
+        line_items: [
+          {
+            price_data: {
+              currency: "brl",
+              product_data: { name: item.name },
+              unit_amount: item.amount, // em centavos
+            },
+            quantity: 1,
+          },
+        ],
+        payment_intent_data: {
+          transfer_group: orderId,
+        },
+        mode: "payment",
+        success_url: `http://localhost:5173/confirmacao-pagamento/${orderId}`,
+      });
+
+      return { sessionUrl: session.url };
+    } catch (err) {
+      console.error("Erro ao criar sessão Stripe:", err);
+      throw new HttpsError("internal", "Erro ao criar a sessão de pagamento.");
+    }
   }
-});
+);
