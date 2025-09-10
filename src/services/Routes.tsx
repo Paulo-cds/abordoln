@@ -1,4 +1,4 @@
-import { db } from "../firebase";
+import { app, db } from "../firebase";
 import {
   deleteDoc,
   doc,
@@ -20,6 +20,9 @@ import { collection, addDoc } from "firebase/firestore";
 import type { Boat, Reservation, Review, User } from "../components/TypesUse";
 import { httpsCallable } from "firebase/functions";
 import { functions } from "../firebase";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
+
+const auth = getAuth(app);
 
 /******Função que adiciona/edita usuário******/
 export const manageAccount = async (data: User) => {
@@ -394,44 +397,53 @@ export interface StripeSessionResult {
 
 export const handlePaymentLink = async (itemToBuy: Item, orderId: string) => {
   console.log("Chamando handlePaymentLink");
-  // try {
-  //   const createStripeSession = httpsCallable<PaymentData, StripeSessionResult>(
-  //     functions,
-  //     'createStripeSession'
-  //   );
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      console.log("Usuário autenticado:", user.uid);
+      try {
+        const createStripeSession = httpsCallable<
+          PaymentData,
+          StripeSessionResult
+        >(functions, "createStripeSession");
 
-  //   // Chame a função, passando o objeto do item
-  //   const result = await createStripeSession({
-  //     item: itemToBuy,
-  //     orderId: orderId
+        // Chame a função, passando o objeto do item
+        const result = await createStripeSession({
+          item: itemToBuy,
+          orderId: orderId,
+        });
+
+        const sessionUrl = result.data.sessionUrl;
+
+        // Redirecione o usuário para o Stripe Checkout
+        window.location.href = sessionUrl;
+      } catch (error) {
+        console.error("Erro ao iniciar o checkout:", error);
+        alert("Ocorreu um erro. Por favor, tente novamente.");
+      }
+    } else {
+      console.log("Nenhum usuário autenticado. Redirecionando para login...");
+      alert("Por favor, faça login para continuar com o pagamento.");
+      // window.location.href = "/login"; // Redireciona para a página de login
+      // return;
+    }
+  });
+
+  // const createStripeSession = httpsCallable<PaymentData, StripeSessionResult>(
+  //   functions,
+  //   "createStripeSession"
+  // );
+
+  // createStripeSession({
+  //   item: itemToBuy,
+  //   orderId: orderId,
+  // })
+  //   .then((result) => {
+  //     const sessionUrl = result.data.sessionUrl;
+  //     // Redirecione o usuário para o Stripe Checkout
+  //     window.location.href = sessionUrl;
+  //   })
+  //   .catch((error) => {
+  //     console.error("Erro ao iniciar o checkout:", error);
+  //     alert("Ocorreu um erro. Por favor, tente novamente.");
   //   });
-
-  //   const sessionUrl = result.data.sessionUrl;
-
-  //   // Redirecione o usuário para o Stripe Checkout
-  //   window.location.href = sessionUrl;
-
-  // } catch (error) {
-  //   console.error("Erro ao iniciar o checkout:", error);
-  //   alert("Ocorreu um erro. Por favor, tente novamente.");
-  // }
-
-  const createStripeSession = httpsCallable<PaymentData, StripeSessionResult>(
-    functions,
-    "createStripeSession"
-  );
-
-  createStripeSession({
-    item: itemToBuy,
-    orderId: orderId,
-  })
-    .then((result) => {
-      const sessionUrl = result.data.sessionUrl;
-      // Redirecione o usuário para o Stripe Checkout
-      window.location.href = sessionUrl;
-    })
-    .catch((error) => {
-      console.error("Erro ao iniciar o checkout:", error);
-      alert("Ocorreu um erro. Por favor, tente novamente.");
-    });
 };
