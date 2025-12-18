@@ -1,5 +1,4 @@
 // frontend/SaveCard.tsx
-import React, { useState } from "react";
 // import { useElements, useStripe } from "@stripe/react-stripe-js";
 // import { httpsCallable } from "firebase/functions";
 // import { functions } from "../firebase";
@@ -9,6 +8,7 @@ import { FaCcVisa } from "react-icons/fa";
 import { FaCcAmex } from "react-icons/fa";
 // import type { FormikProps } from "formik";
 import { CustomCardFields } from "../pages/DetailBoat";
+import { useState } from "react";
 
 // type SetupIntentResponse = {
 //   clientSecret: string;

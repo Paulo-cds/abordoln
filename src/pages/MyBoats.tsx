@@ -76,6 +76,7 @@ const MyBoats: React.FC = () => {
                 capacity={boat.capacity}
                 id={boat.id}
                 action={handleGetMyBoats}
+                active={boat.active}
               />
             </div>
           ))}

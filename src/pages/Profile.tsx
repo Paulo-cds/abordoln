@@ -9,7 +9,7 @@ import { getAuth, sendEmailVerification, updateEmail } from "firebase/auth";
 
 const Profile = () => {
   const { dataUser } = useUserData();
-  console.log("user ", dataUser);
+  // console.log("user ", dataUser);
 
   const [loading, setLoading] = useState(false);
   const auth = getAuth();
@@ -20,7 +20,7 @@ const Profile = () => {
       email: "",
       phone: "",
       whats: "",
-      level: "",
+      // level: "",
       pixKey: "",
       active: true,
     },
@@ -57,7 +57,7 @@ const Profile = () => {
         name: dataUser.name,
         email: dataUser.email,
         phone: dataUser.phone,
-        level: dataUser.level ? dataUser.level : "basic",
+        // level: dataUser.level ? dataUser.level : "basic",
         whats: dataUser.whats ? dataUser.whats : "",
         pixKey: dataUser.pixKey ? dataUser.pixKey : "",
         active: dataUser.active ? dataUser.active : true,
