@@ -21,6 +21,10 @@ import Boats from "./pages/Boats.tsx";
 import Reservations from "./pages/Reservations.tsx";
 import EditReservation from "./pages/EditReservation.tsx";
 import ConfirmPayment from "./pages/ConfirmPayment.tsx";
+import Users from "./pages/Users.tsx";
+import { loadStripe } from "@stripe/stripe-js";
+import { Elements } from "@stripe/react-stripe-js";
+import TermsOfUse from "./pages/TermsOfUse.tsx";
 
 const queryClient = new QueryClient();
 
@@ -54,6 +58,10 @@ const router = createBrowserRouter([
         element: <DetailBoat />,
       },
       {
+        path: "termos-de-uso",
+        element: <TermsOfUse />,
+      },
+      {
         path: "meus-barcos",
         element: <ProtectedRoute allowedRoles={["advertiser"]} />,
         children: [
@@ -85,7 +93,7 @@ const router = createBrowserRouter([
       },
       {
         path: "editando-barco/:id",
-        element: <ProtectedRoute allowedRoles={["advertiser","admin"]} />,
+        element: <ProtectedRoute allowedRoles={["advertiser", "admin"]} />,
         children: [
           {
             index: true,
@@ -105,7 +113,9 @@ const router = createBrowserRouter([
       },
       {
         path: "minha-reserva/:id",
-        element: <ProtectedRoute allowedRoles={["client", "advertiser", "admin"]} />,
+        element: (
+          <ProtectedRoute allowedRoles={["client", "advertiser", "admin"]} />
+        ),
         children: [
           {
             index: true,
@@ -120,6 +130,16 @@ const router = createBrowserRouter([
           {
             index: true,
             element: <ConfirmPayment />,
+          },
+        ],
+      },
+      {
+        path: "usuarios",
+        element: <ProtectedRoute allowedRoles={["admin"]} />,
+        children: [
+          {
+            index: true,
+            element: <Users />,
           },
         ],
       },
@@ -160,6 +180,7 @@ const router = createBrowserRouter([
 const App = () => {
   const checkLogin = useUserData((state) => state.checkLogin);
   const isLoadingData = useUserData((state) => state.isLoadingData);
+  const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
   useEffect(() => {
     checkLogin();
@@ -170,9 +191,11 @@ const App = () => {
   }
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
-    </QueryClientProvider>
+    <Elements stripe={stripePromise}>
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>
+    </Elements>
   );
 };
 

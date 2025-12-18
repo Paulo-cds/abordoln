@@ -1,4 +1,4 @@
-import { app, db } from "../firebase";
+import { /*app,*/ db } from "../firebase";
 import {
   deleteDoc,
   doc,
@@ -8,6 +8,7 @@ import {
   getDocs,
   setDoc,
   updateDoc,
+  runTransaction,
 } from "firebase/firestore";
 import {
   getStorage,
@@ -18,11 +19,14 @@ import {
 } from "firebase/storage";
 import { collection, addDoc } from "firebase/firestore";
 import type { Boat, Reservation, Review, User } from "../components/TypesUse";
-import { httpsCallable } from "firebase/functions";
-import { functions } from "../firebase";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { getFunctions, httpsCallable } from "firebase/functions";
+// import { functions } from "../firebase";
+import {
+  getAuth,
+  onAuthStateChanged /*onAuthStateChanged*/,
+} from "firebase/auth";
 
-const auth = getAuth(app);
+// const auth = getAuth(app);
 
 /******Função que adiciona/edita usuário******/
 export const manageAccount = async (data: User) => {
@@ -35,6 +39,93 @@ export const manageAccount = async (data: User) => {
     });
 
   return response;
+};
+
+/******Função que edita status do usuário******/
+export const manageUserStatus = async (data: User) => {
+  // if (data.role === "client") {
+  //   const response = await setDoc(doc(db, "users", data.userId), data)
+  //     .then(() => {
+  //       return { status: 200 };
+  //     })
+  //     .catch((err) => {
+  //       return { status: 400, error: err };
+  //     });
+
+  //   return response;
+  // }
+  // else if (data.role === "advertiser") {
+  //   const q = query(
+  //     collection(db, "boats"),
+  //     where("managerId", "==", data.userId)
+  //   );
+  //   const querySnapshot = await getDocs(q);
+  //   const boats: Boat[] = querySnapshot.docs.map((doc) => ({
+  //     id: doc.id,
+  //     active: data.active,
+  //     ...doc.data(),
+  //   })) as Boat[];
+  //   boats.forEach(async (boat) => {
+  //     const boatRef = doc(db, "boats", boat.id || "");
+  //     await updateDoc(boatRef, boat);
+  //   });
+  //   const response = await setDoc(doc(db, "users", data.userId), data)
+  //     .then(() => {
+  //       return { status: 200 };
+  //     })
+  //     .catch((err) => {
+  //       return { status: 400, error: err };
+  //     });
+
+  //   return response;
+  // }
+  try {
+    if (data.role === "client") {
+      // Transação simples: só atualiza o usuário
+      await runTransaction(db, async (transaction) => {
+        const userRef = doc(db, "users", data.userId);
+        transaction.set(userRef, data);
+      });
+      return { status: 200 };
+    }
+
+    if (data.role === "advertiser") {
+      // Pega todos os barcos gerenciados pelo usuário
+      const q = query(
+        collection(db, "boats"),
+        where("managerId", "==", data.userId)
+      );
+      const querySnapshot = await getDocs(q);
+
+      const boats = querySnapshot.docs.map((docSnap) => ({
+        id: docSnap.id,
+        ...docSnap.data(),
+      }));
+
+      // Transação única: atualiza todos os barcos e o usuário
+      await runTransaction(db, async (transaction) => {
+        // Atualiza cada barco
+        boats.forEach((boat) => {
+          const boatRef = doc(db, "boats", boat.id);
+          transaction.update(boatRef, { active: data.active });
+        });
+
+        // Atualiza usuário
+        const userRef = doc(db, "users", data.userId);
+        transaction.set(userRef, data);
+      });
+
+      return { status: 200 };
+    }
+
+    return { status: 400, error: "Função chamada com role inválida" };
+  } catch (err) {
+    console.error("Erro em manageUserStatus:", err);
+    return {
+      status: 400,
+      error: err instanceof Error ? err.message : "Erro desconhecido",
+    };
+  }
 };
 
 /******Função que faz o upload de imagens******/
@@ -292,20 +383,133 @@ export const editsingleReservation = async (data: Reservation, id: string) => {
   }
 };
 
-/******Função que confirma o pagamento reserva******/
-export const confirmPaymentReservation = async (id: string) => {
+/******Função que edita os dados da reserva para pagamento futuro******/
+export const editReservationPaymentData = async (
+  data: Reservation["paymentMethod"],
+  id: string
+) => {
   try {
     const boatRef = doc(db, "reservations", id);
-
-    await updateDoc(boatRef, { paid: true });
+    //updateDoc(boatRef, { paid: true })
+    await updateDoc(boatRef, { paymentMethod: data });
     return { status: 200 };
   } catch (error) {
-    console.error("Erro ao finalizar pagamento:", error);
+    console.error("Erro ao editar reserva:", error);
     if (error instanceof Error) {
       return { status: 400, error: error.message };
     }
   }
 };
+
+/******Função que confirma o pagamento reserva******/
+
+// Nova interface que representa o objeto completo enviado para a Cloud Function
+export interface PaymentId {
+  sessionId: string;
+}
+
+export interface StripeSessionId {
+  paymentIntentId: string;
+}
+
+export const confirmPaymentReservation = async (
+  id: string,
+  session_id: string
+) => {
+  try {
+    const checkPaymentStatus = httpsCallable<PaymentId, StripeSessionId>(
+      functions,
+      "checkPaymentStatus"
+    );
+
+    const result = await checkPaymentStatus({ sessionId: session_id });
+    if (result.data) {
+      console.log("result ", result.data);
+      const boatRef = doc(db, "reservations", id);
+      await updateDoc(boatRef, {
+        paid: true,
+        paymentIntentId: result.data.paymentIntentId,
+      });
+      return { status: 200 };
+    } else {
+      throw new Error("Pagamento não confirmado");
+    }
+  } catch (error) {
+    console.error("Erro ao confirmar pagamento:", error);
+    if (error instanceof Error) {
+      throw new Error(error.message);
+    } else {
+      throw new Error("Erro desconhecido ao confirmar pagamento.");
+    }
+  }
+};
+
+export interface PaymentSessionId {
+  paymentIntentId: string;
+}
+
+export const receivePaymentReservation = async (
+  paymentIntentId: string,
+  id: string
+) => {
+  try {
+    const captureStripePayment = httpsCallable<PaymentSessionId>(
+      functions,
+      "captureStripePayment"
+    );
+
+    await captureStripePayment({ paymentIntentId: paymentIntentId });
+    const boatRef = doc(db, "reservations", id);
+    await updateDoc(boatRef, {
+      status: "finished",
+    });
+    return { status: 200 };
+  } catch (error) {
+    console.error("Erro ao confirmar pagamento:", error);
+    if (error instanceof Error) {
+      return { status: 400, error: error.message };
+    }
+  }
+};
+
+export const cancelPaymentReservation = async (
+  paymentIntentId: string,
+  id: string
+) => {
+  try {
+    const cancelStripePayment = httpsCallable<PaymentSessionId>(
+      functions,
+      "cancelStripePayment"
+    );
+
+    await cancelStripePayment({
+      paymentIntentId: paymentIntentId,
+    });
+    const boatRef = doc(db, "reservations", id);
+    await updateDoc(boatRef, {
+      paid: false,
+      status: "canceled",
+    });
+    return { status: 200 };
+  } catch (error) {
+    console.error("Erro ao cancelar pagamento:", error);
+    if (error instanceof Error) {
+      return { status: 400, error: error.message };
+    }
+  }
+};
+
+//     const boatRef = doc(db, "reservations", id);
+
+//     await updateDoc(boatRef, { paid: true });
+//     return { status: 200 };
+//   } catch (error) {
+//     console.error("Erro ao finalizar pagamento:", error);
+//     if (error instanceof Error) {
+//       return { status: 400, error: error.message };
+//     }
+//   }
+// };
 
 /******Função que altera avaliação do passeio******/
 export type RatingData = {
@@ -378,6 +582,24 @@ export const getMyReviews = async (id: string) => {
   }
 };
 
+/********Usuários********/
+
+/******Função que faz o get de todos usuários******/
+export const getUsers = async () => {
+  try {
+    const q = query(collection(db, "users"), where("role", "!=", "admin"));
+    const querySnapshot = await getDocs(q);
+    const allUsers = querySnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...(doc.data() as User),
+    }));
+    return { data: allUsers, status: 200 };
+  } catch (error) {
+    console.error("Erro ao obter usuários:", error);
+    return null;
+  }
+};
+
 /*****Pagamentos ******/
 
 export type Item = {
@@ -389,17 +611,20 @@ export type Item = {
 export interface PaymentData {
   item: Item;
   orderId: string;
+  token?: string; // Torne o token opcional
 }
 
 export interface StripeSessionResult {
   sessionUrl: string;
 }
 
+const auth = getAuth();
+const functions = getFunctions();
+
+//Função que gera pagamento imediato com cartão de crédito via Stripe
 export const handlePaymentLink = async (itemToBuy: Item, orderId: string) => {
-  console.log("Chamando handlePaymentLink");
   onAuthStateChanged(auth, async (user) => {
     if (user) {
-      console.log("Usuário autenticado:", user.uid);
       try {
         const createStripeSession = httpsCallable<
           PaymentData,
@@ -410,6 +635,7 @@ export const handlePaymentLink = async (itemToBuy: Item, orderId: string) => {
         const result = await createStripeSession({
           item: itemToBuy,
           orderId: orderId,
+          // token: idToken,
         });
 
         const sessionUrl = result.data.sessionUrl;
@@ -423,27 +649,85 @@ export const handlePaymentLink = async (itemToBuy: Item, orderId: string) => {
     } else {
       console.log("Nenhum usuário autenticado. Redirecionando para login...");
       alert("Por favor, faça login para continuar com o pagamento.");
-      // window.location.href = "/login"; // Redireciona para a página de login
-      // return;
     }
   });
+};
 
-  // const createStripeSession = httpsCallable<PaymentData, StripeSessionResult>(
-  //   functions,
-  //   "createStripeSession"
-  // );
+//Função que gera pagamento de captura c om cartão de crédito via Stripe
+export const handleCapturePayment = async (
+  itemToBuy: Item,
+  orderId: string
+) => {
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      try {
+        const createStripeSession = httpsCallable<
+          PaymentData,
+          StripeSessionResult
+        >(functions, "createStripeSession");
 
-  // createStripeSession({
-  //   item: itemToBuy,
-  //   orderId: orderId,
-  // })
-  //   .then((result) => {
-  //     const sessionUrl = result.data.sessionUrl;
-  //     // Redirecione o usuário para o Stripe Checkout
-  //     window.location.href = sessionUrl;
-  //   })
-  //   .catch((error) => {
-  //     console.error("Erro ao iniciar o checkout:", error);
-  //     alert("Ocorreu um erro. Por favor, tente novamente.");
-  //   });
+        // Chame a função, passando o objeto do item
+        const result = await createStripeSession({
+          item: itemToBuy,
+          orderId: orderId,
+        });
+        const sessionUrl = result.data.sessionUrl;
+
+        // Redirecione o usuário para o Stripe Checkout
+        window.location.href = sessionUrl;
+      } catch (error) {
+        console.error("Erro ao iniciar o checkout:", error);
+        alert("Ocorreu um erro. Por favor, tente novamente.");
+      }
+    } else {
+      console.log("Nenhum usuário autenticado. Redirecionando para login...");
+      alert("Por favor, faça login para continuar com o pagamento.");
+    }
+  });
+};
+
+//Função que cobra valor de reserva no cartão salvo do cliente, com valor especifico de multa etc.
+
+export interface PaymentPenaltyId {
+  customerId: string;
+  paymentMethodId: string;
+  amount: number;
+  description: string;
+}
+
+export const receivePenaltyReservation = async (
+  customerId: string,
+  paymentMethodId: string,
+  amount: number,
+  description: string
+) => {
+  try {
+    //customerId, paymentMethodId, amount, description
+    const chargeSavedCard = httpsCallable<PaymentPenaltyId>(
+      functions,
+      "chargeSavedCard"
+    );
+    const data = {
+      customerId,
+      paymentMethodId,
+      amount,
+      description,
+    };
+    console.log("data ", data);
+    const response = await chargeSavedCard(data);
+    // const boatRef = doc(db, "reservations", id);
+    // await updateDoc(boatRef, {
+    //   status: "finished",
+    // });
+    return response.data;
+  } catch (error: unknown) {
+    console.error("Erro ao confirmar pagamento:", error);
+
+    if (error instanceof Error) {
+      throw new Error(error.message);
+    }
+
+    // Caso seja algo diferente de Error (ex: string ou objeto do Firebase)
+    throw new Error("Erro ao confirmar pagamento");
+  }
 };

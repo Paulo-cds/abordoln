@@ -14,6 +14,7 @@ type ReservationCardProps = Pick<
   | "dataTour"
   | "imgBoat"
   | "boatName"
+  | "status"
 > & {
   id: string;
 };
@@ -23,10 +24,11 @@ const CardViewReservations: React.FC<ReservationCardProps> = ({
   boatName,
   data,
   price,
-  paid,
+  // paid,
   dataTour,
   imgBoat,
   id,
+  status
 }) => {
   const navigate = useNavigate();
   const { dataUser } = useUserData();
@@ -47,11 +49,20 @@ const CardViewReservations: React.FC<ReservationCardProps> = ({
         <div className="flex flex-col gap-4">
           <p className="text-[1em]">Valor R${price}</p>
           <p
-            className={`text-[1em]  ${
-              paid ? "text-green-500" : "text-red-500"
-            }`}
+            className={`text-[1em]`}
           >
-            {paid ? "Pago" : "Pagamento pendente"}
+            Status: 
+            {status === "requested"
+                  ? " Aguardando aprovação do dono da embarcação"
+                  : status === "aproved"
+                  ? " Reserva aprovada pelo dono da embarcação"
+                  : status === "rejected"
+                  ? " Reserva recusada pelo dono da embarcação"
+                  : status === "finished"
+                  ? " O passeio ja foi realizado"
+                  : status === "canceled"
+                  ? " Cancelado"
+                  : ""}
           </p>
         </div>
         <div className="flex flex-col gap-4 w-full md:w-auto">

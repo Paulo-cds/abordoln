@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
 import ButtonDefault from "../components/ButtonDefault";
-import { TextareaDefault } from "../components/InputDefault";
+import InputDefault, { TextareaDefault } from "../components/InputDefault";
 import LoadingDefault from "../components/LoadingDefault";
 import {
   assessmentTrip,
+  // cancelPaymentReservation,
   getSingleReservation,
-  handlePaymentLink,
+  receivePenaltyReservation,
+  // handleCapturePayment,
+  // receivePaymentReservation,
   type RatingData,
 } from "../services/Routes";
 import { type Reservation /*type SelectOption*/ } from "../components/TypesUse";
@@ -17,6 +20,12 @@ import AlertNotification from "../components/AlertNotification";
 import { FaWhatsapp } from "react-icons/fa";
 import { useUserData } from "../components/ContextData";
 import { FaRegEdit } from "react-icons/fa";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogTitle from "@mui/material/DialogTitle";
+import Button from "@mui/material/Button";
 
 const DetailMyReservation = () => {
   const { dataUser } = useUserData();
@@ -32,6 +41,8 @@ const DetailMyReservation = () => {
   const [assessmentValue, setAssessmentValue] = useState<number | null>(null);
   const [assessmentText, setAssessmentText] = useState("");
   const [minDate, setMinDate] = useState("");
+  const [valueReceive, setValueReceive] = useState<string>("");
+  const [openEditValueReceive, setOpenEditValueReceive] = useState(false);
   // const [optionsSelect, setOptionsSelect] = useState<SelectOption[]>([]);
 
   const { isLoading, error } = useQuery<Reservation | null>(
@@ -99,10 +110,11 @@ const DetailMyReservation = () => {
   }
 
   const handleVerificDate = () => {
+    if (!reservationAllData?.dataTour) return false;
     const today = new Date().toLocaleDateString("pt-BR");
-    // const tripDay = new Date(reservationAllData.dataTour).toDateString();
+    const tripDay = new Date(reservationAllData.dataTour).toDateString();
     if (reservationAllData) {
-      if (today >= reservationAllData.dataTour) {
+      if (today >= tripDay) {
         return true;
       } else return false;
     }
@@ -152,11 +164,87 @@ const DetailMyReservation = () => {
     }
   };
 
-  const handleGenerationPayment = async () => {
+  // const handleGenerationPayment = async () => {
+  //   setLoading(true);
+  //   try {
+  //     if (id && reservationAllData) {
+  //       const amountWithDot = reservationAllData.price.replace(",", ".");
+
+  //       // 2. Converte para um número decimal (float)
+  //       const amountFloat = parseFloat(amountWithDot);
+
+  //       // 3. Multiplica por 100 e arredonda para um número inteiro
+  //       const amountInCents = Math.round(amountFloat * 100);
+
+  //       const itemToBuy = {
+  //         name: `Reserva ${reservationAllData.name} - ${reservationAllData.boatName}`,
+  //         amount: amountInCents,
+  //       };
+  //       // await handlePaymentLink(itemToBuy, id);
+  //       await handleCapturePayment(itemToBuy, id);
+  //     }
+  //   } catch (e) {
+  //     console.log(e);
+  //   }
+  //   setLoading(false);
+  // };
+
+  // const handleReceivePayment = async () => {
+  //   setLoading(true);
+  //   try {
+  //     if (reservationAllData && reservationAllData.paymentIntentId && id) {
+  //       await receivePaymentReservation(reservationAllData.paymentIntentId, id);
+
+  //       setOpenAlert(true);
+  //       setAlertMessage("Pagamento recebido com sucesso!");
+  //       setAlertType("success");
+  //     }
+  //   } catch (e) {
+  //     console.log(e);
+  //     setOpenAlert(false);
+  //     setAlertMessage("Erro ao receber pagamento.");
+  //     setAlertType("error");
+  //   }
+  //   setLoading(false);
+  // };
+
+  // const handleCancelPayment = async () => {
+  //   setLoading(true);
+  //   try {
+  //     if (reservationAllData && reservationAllData.paymentIntentId && id) {
+  //       await cancelPaymentReservation(reservationAllData.paymentIntentId, id);
+
+  //       setOpenAlert(true);
+  //       setAlertMessage("Pagamento cancelado com sucesso!");
+  //       setAlertType("success");
+  //     }
+  //   } catch (e) {
+  //     console.log(e);
+  //     setOpenAlert(false);
+  //     setAlertMessage("Erro ao cancelar pagamento.");
+  //     setAlertType("error");
+  //   }
+  //   setLoading(false);
+  // };
+
+  const handlePenaltyPayment = async () => {
     setLoading(true);
+    setOpenEditValueReceive(false);
+    {
+      /*
+      customerId: string;
+  paymentMethodId: string;
+  amount: number;
+  description: string;
+       */
+    }
     try {
-      if (id && reservationAllData) {
-        const amountWithDot = reservationAllData.price.replace(",", ".");
+      if (
+        reservationAllData &&
+        reservationAllData.paymentMethod &&
+        valueReceive
+      ) {
+        const amountWithDot = valueReceive.replace(",", ".");
 
         // 2. Converte para um número decimal (float)
         const amountFloat = parseFloat(amountWithDot);
@@ -164,14 +252,30 @@ const DetailMyReservation = () => {
         // 3. Multiplica por 100 e arredonda para um número inteiro
         const amountInCents = Math.round(amountFloat * 100);
 
-        const itemToBuy = {
-          name: `Reserva ${reservationAllData.name} - ${reservationAllData.boatName}`,
+        const itemToPay = {
+          customerId: reservationAllData.paymentMethod.customerId,
+          paymentMethodId: reservationAllData.paymentMethod.paymentMethodId,
           amount: amountInCents,
+          description: `Penalidade de cancelamento - Reserva ${reservationAllData.name} - ${reservationAllData.boatName}`,
         };
-        await handlePaymentLink(itemToBuy, id);
+        console.log("enviando para rota ", itemToPay);
+        // await handlePaymentLink(itemToPay, id);
+        const response = await receivePenaltyReservation(
+          reservationAllData.paymentMethod.customerId,
+          reservationAllData.paymentMethod.paymentMethodId,
+          amountInCents,
+          `Penalidade de cancelamento - Reserva ${reservationAllData.name} - ${reservationAllData.boatName}`
+        );
+        console.log("response ", response);
+        setAlertMessage("Multa cobrada com sucesso!");
+        setAlertType("success");
+        setOpenAlert(true);
       }
     } catch (e) {
       console.log(e);
+      setAlertMessage("Erro ao cobrar multa.");
+      setAlertType("error");
+      setOpenAlert(true);
     }
     setLoading(false);
   };
@@ -288,22 +392,52 @@ const DetailMyReservation = () => {
                 R${reservationAllData.price}
               </p>
             </div>
-            <DividerComponent />
+            {/* <DividerComponent />
             <div className="flex items-center gap-3">
               <p className="text-primary text-[1em] font-medium ">Pago:</p>
               <p className="text-primary text[1em] flex items-center gap-2">
                 {reservationAllData.paid ? "Sim" : "Não"}
-                {/* {!reservationAllData.paid &&
+                <p
+                  className="text-blue-500 cursor-pointer"
+                  onClick={() => handleGenerationPayment()}
+                >
+                  Clique aqui para pagar
+                </p>
+                {!reservationAllData.paid &&
+                  reservationAllData.status === "aproved" &&
+                  dataUser &&
+                  dataUser.role === "client" && (
+                    <p
+                      className="text-blue-500 cursor-pointer"
+                      onClick={() => handleGenerationPayment()}
+                    >
+                      Clique aqui para pagar
+                    </p>
+                  )}
+                {reservationAllData.paid &&
+                  dataUser &&
+                  dataUser.role === "admin" &&
                   reservationAllData.status === "aproved" && (
-                    <p className="text-blue-500 cursor-pointer" onClick={handleGenerationPayment}>
-                      Clique aqui para pagar
+                    <p
+                      className="text-blue-500 cursor-pointer"
+                      onClick={() => handleReceivePayment()}
+                    >
+                      Receber valor
                     </p>
-                  )} */}
-                  <p className="text-blue-500 cursor-pointer" onClick={()=>handleGenerationPayment()}>
-                      Clique aqui para pagar
+                  )}
+                {reservationAllData.paid &&
+                  dataUser &&
+                  dataUser.role === "admin" &&
+                  reservationAllData.status === "aproved" && (
+                    <p
+                      className="text-red-500 cursor-pointer"
+                      onClick={() => handleCancelPayment()}
+                    >
+                      Cancelar Pagamento
                     </p>
+                  )}
               </p>
-            </div>
+            </div> */}
             <DividerComponent />
             <div className="flex items-center gap-3">
               <p className="text-primary text-[1em] font-medium ">Status:</p>
@@ -312,8 +446,10 @@ const DetailMyReservation = () => {
                   ? "Solicitado - Aguardando aprovação do dono da embarcação"
                   : reservationAllData.status === "aproved"
                   ? "Aprovado - Reserva aprovada pelo dono da embarcação"
+                  : reservationAllData.status === "rejected"
+                  ? "Recusado - Reserva recusada pelo dono da embarcação"
                   : reservationAllData.status === "finished"
-                  ? "Fanalizado - O passeio ja foi realizado"
+                  ? "Finalizado - O passeio ja foi realizado"
                   : reservationAllData.status === "canceled"
                   ? "Cancelado"
                   : ""}
@@ -334,7 +470,7 @@ const DetailMyReservation = () => {
                 {reservationAllData.duration}
               </p>
             </div>
-            {reservationAllData.paymentLink && (
+            {/* {reservationAllData.paymentLink && (
               <>
                 <DividerComponent />
                 <div className="flex items-center gap-3">
@@ -348,11 +484,10 @@ const DetailMyReservation = () => {
                     >
                       Clique aqui para pagar
                     </a>
-                    {/* {reservationAllData.dataTour} */}
                   </p>
                 </div>
               </>
-            )}
+            )} */}
             {dataUser && dataUser.role === "admin" && (
               <>
                 <DividerComponent />
@@ -369,6 +504,22 @@ const DetailMyReservation = () => {
                     </p>
                   </a>
                 </div>
+                {reservationAllData.paymentMethod && (
+                  <>
+                    <DividerComponent />
+                    <div className="flex items-center gap-3">
+                      <p className="text-primary text-[1em] font-medium ">
+                        Cobrar multa:
+                      </p>
+                      <ButtonDefault
+                        action={() =>
+                          setOpenEditValueReceive(!openEditValueReceive)
+                        }
+                        text={"Cobrar"}
+                      />
+                    </div>
+                  </>
+                )}
               </>
             )}
           </div>
@@ -397,6 +548,33 @@ const DetailMyReservation = () => {
           </p>
         </a>
       )}
+      <Dialog
+        open={openEditValueReceive}
+        // onClose={handleClose}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title">
+          Insira o valor a receber com multa
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            Por favor, insira o valor que deseja receber, incluindo a multa.
+          </DialogContentText>
+          <InputDefault
+            name="valueToReceive"
+            value={valueReceive}
+            onChange={(e) => setValueReceive(e.target.value)}
+            placeholder="Valor a receber"
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenEditValueReceive(false)}>
+            Cancelar
+          </Button>
+          <Button onClick={() => handlePenaltyPayment()}>Cobrar</Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 };

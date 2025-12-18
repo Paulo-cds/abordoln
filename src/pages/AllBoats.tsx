@@ -45,6 +45,9 @@ const AllBoats: React.FC = () => {
   }, [redirectUri]);
 
   const filterBoat = (boat: Boat) => {
+    if (boat && !boat.active) {
+      return false;
+    }
     if (cityFilter && typeFilter) {
       if (boat.city === cityFilter && boat.type === typeFilter) {
         return true;
@@ -83,7 +86,7 @@ const AllBoats: React.FC = () => {
       setTypeFilter("");
     }
   };
-
+ 
   return (
     <div className="w-full flex flex-col items-center w-full mx-auto pb-4 mt-2">
       <h1 className="text-primary">Embarcações</h1>
@@ -152,6 +155,7 @@ const AllBoats: React.FC = () => {
                     price={boat.price}
                     images={boat.images}
                     capacity={boat.capacity}
+                    active={boat.active}
                     id={boat.id}
                     action={() => navigate(`/detalhes-barco/${boat.id}`)}
                   />

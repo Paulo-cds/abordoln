@@ -13,7 +13,6 @@ export type User = {
   email: string;
   phone: string;
   role: string;
-  level?: string;
   whats?: string;
   pixKey?:string;
   active: boolean;
@@ -36,6 +35,7 @@ export type Boat = {
   sailor?: boolean;
   id?: string;
   managerId?: string;
+  active: boolean;
   // boatAllData?:string;
 };
 
@@ -69,6 +69,12 @@ export type Reservation = {
   paymentLink?: string;
   finishLink?: string;
   productName?: string;
+  paymentIntentId?: string;
+  paymentMethod?:{
+    customerId: string;
+    paymentMethodId: string;
+    clientSecret: string;
+  }
 };
 
 export type Review = {
@@ -101,6 +107,7 @@ export const citiesOfBoats = [
 export const statusOfReservation = [
   { label: "Solicitado", value: "requested" },
   { label: "Aprovado", value: "aproved" },
+  { label: "Recusado", value: "rejected" },
   { label: "Finalizado", value: "finished" },
   { label: "Cancelado", value: "canceled" },
 ];

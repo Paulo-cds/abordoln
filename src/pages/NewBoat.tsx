@@ -46,6 +46,7 @@ const NewBoat = () => {
       boardingTime: "",
       type: "",
       city: "",
+      active: true, // Definindo ativo como true por padrão
       sailor: true, // Definindo o marinheiro como obrigatório
     },
     validationSchema: yup.object({
@@ -153,6 +154,7 @@ const NewBoat = () => {
           type: values.type,
           city: values.city,
           sailor: true,
+          active: values.active,
           managerId: dataUser?.userId || "",
         };
         await addNewBoat(data);
@@ -513,6 +515,26 @@ const NewBoat = () => {
                 <FaCheck className="text-green-500 text-2xl" /> Marinheiro
                 incluso.
               </p>
+            </div>
+            <div>
+              <p className="text-primary text-1xl ">
+                Ativo/Disponível para reservas.
+              </p>
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="myCheckbox"
+                  name="myCheckbox"
+                  className="form-checkbox h-5 w-5 text-primary radius-[50px]"
+                  checked={formik.values.active}
+                  onChange={() =>
+                    formik.setFieldValue("active", !formik.values.active)
+                  }
+                />
+                <label htmlFor="myCheckbox" className="ml-2 text-gray-700">
+                  {formik.values.active ? "Ativo" : "Inativo"}
+                </label>
+              </div>
             </div>
           </div>
           <div className="mt-2">

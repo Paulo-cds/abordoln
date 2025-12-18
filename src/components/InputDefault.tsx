@@ -12,6 +12,7 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   name: string;
   pattern?: string;
   title?: string;
+  maxLength?: number;
 }
 
 interface TextareaProps extends React.InputHTMLAttributes<HTMLTextAreaElement> {
@@ -23,7 +24,7 @@ interface TextareaProps extends React.InputHTMLAttributes<HTMLTextAreaElement> {
   required?: boolean;
   name: string;
   pattern?: string;
-  title?: string;
+  title?: string;  
 }
 
 const InputDefault: React.FC<InputProps> = ({
@@ -36,6 +37,7 @@ const InputDefault: React.FC<InputProps> = ({
   name,
   pattern,
   title,
+  maxLength,
 }) => {
   const [inputType, setInputType] = useState(type);
   return (
@@ -53,6 +55,7 @@ const InputDefault: React.FC<InputProps> = ({
           name={name}
           pattern={pattern}
           title={title}
+          maxLength={maxLength}
         />
         {type === "password" && (
           <div

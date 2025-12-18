@@ -14,11 +14,12 @@ const Boats: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const { isLoading } = useQuery(
     ["data", dataUser],
-    () => getAllBoats().then((data) => {
-      if (data) {
-        setBoatsData(data.data);
-      }
-    }),
+    () =>
+      getAllBoats().then((data) => {
+        if (data) {
+          setBoatsData(data.data);
+        }
+      }),
     { refetchOnWindowFocus: false }
   );
   const navigate = useNavigate();
@@ -31,7 +32,7 @@ const Boats: React.FC = () => {
     setLoading(true);
     try {
       const response = await getAllBoats();
-      if(response){
+      if (response) {
         setBoatsData(response.data);
       }
     } catch (e) {
@@ -46,12 +47,14 @@ const Boats: React.FC = () => {
       <h3 className="text-primary mt-4">
         Aqui você pode gerenciar todos os barcos cadastrados.
       </h3>
-      <div className="w-50 max-w-90 mt-8 ">
-        <ButtonDefault
-          text={"Adicionar Barco"}
-          action={() => navigate("/novo-barco")}
-        />
-      </div>
+      {dataUser?.role === "advertiser" && (
+        <div className="w-50 max-w-90 mt-8 ">
+          <ButtonDefault
+            text={"Adicionar Barco"}
+            action={() => navigate("/novo-barco")}
+          />
+        </div>
+      )}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 w-full mt-8">
         {boatsData &&
           boatsData.map((boat) => (
@@ -65,6 +68,7 @@ const Boats: React.FC = () => {
                 price={boat.price}
                 images={boat.images}
                 capacity={boat.capacity}
+                active={boat.active}
                 id={boat.id}
                 action={handleGetMyBoats}
               />

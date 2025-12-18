@@ -8,8 +8,13 @@ import { CiCirclePlus } from "react-icons/ci";
 import { IoIosRemoveCircleOutline } from "react-icons/io";
 import SelectDefault from "../components/SelectDefault";
 import { CiImageOn } from "react-icons/ci";
-import { editMyBoat, getSingleBoat, isSuccess, uploadImages } from "../services/Routes";
-import { useUserData } from "../components/ContextData";
+import {
+  editMyBoat,
+  getSingleBoat,
+  isSuccess,
+  uploadImages,
+} from "../services/Routes";
+// import { useUserData } from "../components/ContextData";
 import { citiesOfBoats, typesOfBoats, type Boat } from "../components/TypesUse";
 import { FaCheck } from "react-icons/fa";
 import AlertNotification from "../components/AlertNotification";
@@ -19,7 +24,7 @@ import { useQuery } from "react-query";
 const EditBoat = () => {
   const [loading, setLoading] = useState(false);
   const { id } = useParams();
-  const { dataUser } = useUserData();
+  // const { dataUser } = useUserData();
   const navigate = useNavigate();
   const [details, setDetails] = useState<string[]>([]);
   const [scripts, setScripts] = useState<string[]>([]);
@@ -54,6 +59,8 @@ const EditBoat = () => {
             price: boatData.price || "",
             type: boatData.type || "",
             city: boatData.city || "",
+            active: boatData.active,
+            managerId: boatData.managerId,
             sailor: boatData.sailor !== undefined ? boatData.sailor : true,
             details: boatData.details || [],
             scripts: boatData.scripts || [],
@@ -98,6 +105,8 @@ const EditBoat = () => {
       boardingTime: "",
       type: "",
       city: "",
+      managerId: "",
+      active: true,
       sailor: true, // Definindo o marinheiro como obrigatório
     },
     validationSchema: yup.object({
@@ -169,7 +178,7 @@ const EditBoat = () => {
 
           // Aguarda todas as promessas de upload
           const uploadedUrls = (await Promise.all(uploadPromises)).filter(
-            url => url !== null
+            (url) => url !== null
           ) as string[];
 
           if (uploadedUrls.length === 0 && imagesFile.length > 0) {
@@ -198,10 +207,11 @@ const EditBoat = () => {
           boardingTime: values.boardingTime,
           type: values.type,
           city: values.city,
+          active: values.active,
           sailor: true,
-          managerId: dataUser?.userId || "",
+          managerId: values.managerId,
         };
-       
+
         await editMyBoat(data, id ? id : "");
         setAlertMessage("Embarcação atualizada com sucesso!");
         setAlertType("success");
@@ -501,7 +511,8 @@ const EditBoat = () => {
                 Adicione as estruturas da embarcação, como: banheiro, cozinha,
                 etc.
               </p>
-              {formik.values.structure && formik.values.structure.length > 0 &&
+              {formik.values.structure &&
+                formik.values.structure.length > 0 &&
                 formik.values.structure.map((detail, index) => (
                   <div
                     className="flex items-center gap-2 grid grid-cols-12"
@@ -559,6 +570,26 @@ const EditBoat = () => {
                 <FaCheck className="text-green-500 text-2xl" /> Marinheiro
                 incluso.
               </p>
+            </div>
+            <div>
+              <p className="text-primary text-1xl ">
+                Ativo/Disponível para reservas.
+              </p>
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="myCheckbox"
+                  name="myCheckbox"
+                  className="form-checkbox h-5 w-5 text-primary radius-[50px]"
+                  checked={formik.values.active}
+                  onChange={() =>
+                    formik.setFieldValue("active", !formik.values.active)
+                  }
+                />
+                <label htmlFor="myCheckbox" className="ml-2 text-gray-700">
+                  {formik.values.active ? "Ativo" : "Inativo"}
+                </label>
+              </div>
             </div>
           </div>
           <div className="mt-2">

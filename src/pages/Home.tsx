@@ -7,6 +7,7 @@ import caragua from "../assets/caragua.png";
 import ButtonDefault from "../components/ButtonDefault";
 import { useNavigate } from "react-router-dom";
 import DividerComponent from "../components/DividerComponent";
+import { useEffect } from "react";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -17,6 +18,15 @@ const Home = () => {
       return;
     } else navigate(`/embarcacoes`);
   };
+
+  useEffect(() => {
+    if(localStorage.getItem("isNewUser") === "true"){
+      setTimeout(() => {
+        localStorage.removeItem("isNewUser");
+        window.location.reload();
+      }, 1000);
+    }    
+  }, []);
 
   return (
     <>

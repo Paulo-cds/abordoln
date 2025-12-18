@@ -9,10 +9,12 @@ const ConfirmPayment = () => {
   const [loading, setLoading] = useState(true);
   const { id } = useParams();
   const [reservationCompleted, setReservationCompleted] = useState("");
+  const urlParams = new URLSearchParams(window.location.search);
+  const session_id = urlParams.get("session_id");
 
   const { isLoading } = useQuery(
     ["boat", id],
-    () => confirmPaymentReservation(id || ""),
+    async () => await confirmPaymentReservation(id || "", session_id || ""),
     {
       enabled: !!id,
       refetchOnWindowFocus: false,

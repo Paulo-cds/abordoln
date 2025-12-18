@@ -3,6 +3,7 @@ import ButtonDefault from "./ButtonDefault";
 type ItemDelete = {
   text: string;
   subText?: string;
+  buttonText?: string;
   action?: () => void;
   setOpen: (open: boolean) => void;
 };
@@ -12,6 +13,7 @@ const AlertDeleteItem: React.FC<ItemDelete> = ({
   action,
   setOpen,
   subText,
+  buttonText,
 }) => {
   const handleDeleteItem = () => {
     setOpen(false);
@@ -32,7 +34,7 @@ const AlertDeleteItem: React.FC<ItemDelete> = ({
             action={() => setOpen(false)}
             colorSecondary={true}
           />
-          <ButtonDefault text={"Deletar"} action={handleDeleteItem} />
+          <ButtonDefault text={buttonText || "Deletar"} action={handleDeleteItem} />
         </div>
       </div>
     </div>

@@ -25,7 +25,7 @@ const NewAccount = () => {
   const [openAlert, setOpenAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
   const [alertType, setAlertType] = useState<"success" | "error">("success");
-
+  
   const formik = useFormik({
     initialValues: {
       name: "",
@@ -52,30 +52,27 @@ const NewAccount = () => {
     onSubmit: async (values) => {
       setLoading(true);
       try {
-        await createUserWithEmailAndPassword(
+        const responseCreate = await createUserWithEmailAndPassword(
           auth,
           values.email,
           values.password
         );
-        const userCredential = await signInWithEmailAndPassword(
+        
+        await signInWithEmailAndPassword(
           auth,
           values.email,
           values.password
-        );
-        const userId = userCredential.user.uid;
+        ); 
+
         const data = {
           name: values.name,
           email: values.email,
           phone: values.phone,
           role: values.role ? values.role : "client",
-          userId: userId,
-          active: true,
-          level: typeUser.typeUser === "advertiser" ? "basic" : undefined,
+          userId: responseCreate.user.uid,
+          active: typeUser.typeUser === "advertiser" ? false : true,
         };
-        // if (typeUser.typeUser === "advertiser") {
-        //   data.level = "basic";
-        // }
-
+        
         await manageAccount(data);
 
         if (auth.currentUser) {
@@ -88,6 +85,10 @@ const NewAccount = () => {
         if (redirectUri) {
           window.location.href = decodeURIComponent(redirectUri);
         } else {
+          setAlertMessage("Cadastro realizado com sucesso!");
+          setAlertType("success");
+          setOpenAlert(true);
+          localStorage.setItem("isNewUser", "true");
           navigate("/");
         }
       } catch (error) {
@@ -171,6 +172,7 @@ const NewAccount = () => {
               onChange={formik.handleChange}
               pattern={"[0-9]{2}[0-9]{5}[0-9]{4}"}
               title={"Formato: 12345678901"}
+              maxLength={11}
             />
             {formik.touched.phone && formik.errors.phone ? (
               <p className="text-red-500 text-sm">{formik.errors.phone}</p>
