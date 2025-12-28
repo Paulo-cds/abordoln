@@ -1,15 +1,23 @@
 import InstructionsCard from "./InstructionsCard";
 
-
 const Instructions = () => {
   return (
-    <div className="instructions mt-4">
-      <h2 className="text-primary" >How to Use This Application</h2>
-      <InstructionsCard title="Sign Up or Log In" description="Create an account or log in to access your dashboard." />
-      <InstructionsCard title="Navigate to Dashboard" description="View your data and analytics on the dashboard." />
-      <InstructionsCard title="Use Filters" description="Customize your view with the available filters." />
-      <InstructionsCard title="Click for Details" description="Click on any item for more detailed information." />
-      <InstructionsCard title="Contact Support" description="Reach out to support if you need assistance." />
+    <div className="instructions mt-6">
+      <h2 className="text-primary">Perguntas frequentes</h2>
+      <InstructionsCard
+        title="Como funcionam as reservas?"
+        description="Ao preencher os dados da reserva e do cartão de crédito, o locador receberá uma notificação para aceitar ou recusar a solicitação.
+      Caso aceite, a reserva estará confirmada e você poderá comparecer na data e horário agendados para iniciar o passeio."
+      />
+      <InstructionsCard
+        title="Porque devo colocar dados do meu cartão para realizar a reserva?"
+        description="Inserir os dados do cartão é necessário apenas para trazer uma segurança maior para o locador, 
+      pois se o cliente não comparecer na data e horário reservados ou cancelar a reserva fora do prazo estabelecido a multa referente a essa situação será cobrada no cartão cadastrado."
+      />
+      <InstructionsCard
+        title="Algum valor será cobrada no ato da reserva?"
+        description="Não. A locação deverá ser paga ao final do passeio diretamente para o locador."
+      />     
     </div>
   );
 };

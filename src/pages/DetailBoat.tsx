@@ -28,6 +28,7 @@ import ButtonDefault from "../components/ButtonDefault";
 import { useElements, useStripe } from "@stripe/react-stripe-js";
 import { httpsCallable } from "firebase/functions";
 import { functions } from "../firebase";
+import Instructions from "../components/Instructions";
 
 type ReviewProps = Review & {
   id: string;
@@ -650,9 +651,9 @@ const DetailBoat = () => {
               />
             ))}
       </div>
-      {/* <div>
+      <div>
         <Instructions/>
-      </div> */}
+      </div>
       {loading && <LoadingDefault />}
       {openAlert && (
         <AlertNotification
@@ -674,7 +675,7 @@ import {
   CardExpiryElement,
   CardCvcElement,
 } from "@stripe/react-stripe-js";
-// import Instructions from "../components/Instructions";
+
 
 const inputStyle = {
   style: {
